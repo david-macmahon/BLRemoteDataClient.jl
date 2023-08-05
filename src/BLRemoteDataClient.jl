@@ -2,6 +2,8 @@ module BLRemoteDataClient
 
 using HTTP, JSON
 
+include("version.jl")
+
 """
 A `Ref` holding the default hostname of the server.  This is initialized to the
 value of `ENV["BL_REMOTE_DATA_SERVER_HOST"]` if set, otherwise `"localhost"`,
