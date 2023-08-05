@@ -1,7 +1,7 @@
 name = "BLRemoteDataClient"
 uuid = "fb54281b-2328-43f0-88b5-aa616f75139e"
 authors = ["David MacMahon <davidm@astro.berkeley.edu>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
