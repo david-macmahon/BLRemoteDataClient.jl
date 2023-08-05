@@ -67,21 +67,15 @@ equivalent:
 
 ```julia
 # With explicit hostname
-julia> BLRemoteDataClient.prefixes("blc43")
-3-element Vector{String}:
- "/datax"
- "/datax2"
- "/datax3"
+julia> println(BLRemoteDataClient.prefixes("blc43"))
+["/datax", "/datax2", "/datax3"]
 
 # With custom "default" hostname
 julia> BLRemoteDataClient.HOST[] = "blc43"
 "blc43"
 
-julia> BLRemoteDataClient.prefixes()
-3-element Vector{String}:
- "/datax"
- "/datax2"
- "/datax3"
+julia> println(BLRemoteDataClient.prefixes())
+["/datax", "/datax2", "/datax3"]
 ```
 
 ## Using the client with multiple servers
