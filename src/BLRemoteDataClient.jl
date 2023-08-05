@@ -54,6 +54,15 @@ function restcall(path, host=HOST[], port=PORT[]; kwargs...)
 end
 
 """
+    version([host, [port]])::String
+
+Return the version of the BLRemoteDataServer server.
+"""
+function version(host=HOST[], port=PORT[])::String
+    restcall("version", host, port)
+end
+
+"""
     prefixes([host, [port]])::Vector{String}
 
 Return the list of directory path prefixes that the server serves.

@@ -22,6 +22,7 @@ The client provides functions to access to the following RESTful API endpoints:
 
 | Endpoint  | Function  |
 |:----------|:----------|
+|/version   | version   |
 |/prefixes  | prefixes  |
 |/readdir   | readdir   |
 |/finddirs  | finddirs  |
@@ -47,6 +48,7 @@ initialized to `"localhost"` and `PORT` is initialized to 8000.
 Here are the methods supported by the client:
 
 ```
+version([host, [port]])::String
 prefixes([host, [port]])::Vector{String}
 readdir(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 finddirs(dir, [host, [port]]; regex=".", join=true)::Vector{String}
