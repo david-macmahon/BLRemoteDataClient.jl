@@ -1,8 +1,10 @@
 module BLRemoteDataClient
 
 using HTTP, JSON
+import DataStructures: SortedDict
 
 include("version.jl")
+include("ordering.jl")
 
 """
 A `Ref` holding the default hostname of the server.  This is initialized to the
@@ -49,7 +51,8 @@ end
 
 function restcall(path, host=HOST[], port=PORT[]; kwargs...)
     restcall(path, host, port; kwargs...) do resp
-        JSON.Parser.parse(String(resp.body))
+        JSON.Parser.parse(String(resp.body);
+                          dicttype=SortedDict{String, Any, BLRDOrdering})
     end
 end
 
@@ -113,7 +116,7 @@ function findfiles(dir, host=HOST[], port=PORT[]; regex=".", join=true)::Vector{
 end
 
 """
-    fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{Dict{String,Any}}
+    fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any}}
 
 Finds all files in/under directory `dir` that match `regex` and returns a
 `Vector` of dictionaries each containing the header metadata from a
@@ -125,7 +128,8 @@ This function works with both *SIGPROC Filterbank* files (typically having a
 `.fil` extension) and *Filterbank HDF5* files (typically having a `.h5`
 extension).
 """
-function fbfiles(dir, host=HOST[], port=PORT[]; regex="\\.(fil|h5)\$")::Vector{Dict{String,Any}}
+function fbfiles(dir, host=HOST[], port=PORT[];
+                 regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any,BLRDOrdering}}
     restcall("fbfiles", host, port; dir, regex)
 end
 

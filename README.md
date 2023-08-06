@@ -53,7 +53,7 @@ prefixes([host, [port]])::Vector{String}
 readdir(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 finddirs(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 findfiles(dir, [host, [port]]; regex=".", join=true)::Vector{String}
-fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{Dict{String,Any}}
+fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any}}
 fbdata(fbname, [host, [port]]; chans=:, ifs=:, times=:, dropdims=())::Array{Float32}
 ```
 
