@@ -134,7 +134,8 @@ function fbfiles(dir, host=HOST[], port=PORT[];
 end
 
 """
-    fbdata(fbname, [host, [port]]; chans=:, ifs=:, times=:, dropdims=())::Array{Float32}
+    fbdata(fbname, [host, [port]];
+           chans=:, ifs=:, times=:, fqav=1, tmav=1, dropdims=())::Array{Float32}
 
 Returns an `Array{Float32}` containing data from the server's *Filterbank* file
 named `fbname`.  All or some of the data can be requested by passing the desired
@@ -146,12 +147,21 @@ keyword argument specifies a dimension or dimensions to drop.  `dropdims` can be
 an integer or a tuple of integer values to drop multiple dimensions.  Requesting
 to drop a dimension that is greater than 1 will result in an error.
 
+The `fqav` and `tmav` keyword arguments specify the desired server-side
+frequency and time, resp., averaging to perform.  If a range of frequency and or
+time indices are specified, then they will be rounded down to the nearest
+multiple of the corresponding averaging value.  When selecting all frequency
+and/or time indices (i.e. with `:`), an error will occur if the size of the
+dimension is not divisible by the corresponding averaging value.
+
 This function works with both *SIGPROC Filterbank* files (typically having a
 `.fil` extension) and *Filterbank HDF5* files (typically having a `.h5`
 extension).
 """
-function fbdata(fbname, host=HOST[], port=PORT[]; chans=:, ifs=:, times=:, dropdims=())::Array{Float32}
-    restcall("fbdata", host, port; file=fbname, chans, ifs, times) do resp
+function fbdata(fbname, host=HOST[], port=PORT[];
+                chans=:, ifs=:, times=:,
+                fqav::Integer=1, tmav::Integer=1, dropdims=())::Array{Float32}
+    restcall("fbdata", host, port; file=fbname, chans, ifs, times, fqav, tmav) do resp
         ii = findfirst(p->p[1]=="X-dims", resp.headers)
         dims = parse.(Int, split(resp.headers[ii][2] , ",")) |> Tuple
         data = collect(reshape(reinterpret(Float32, resp.body), dims))

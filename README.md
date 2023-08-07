@@ -54,7 +54,7 @@ readdir(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 finddirs(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 findfiles(dir, [host, [port]]; regex=".", join=true)::Vector{String}
 fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any}}
-fbdata(fbname, [host, [port]]; chans=:, ifs=:, times=:, dropdims=())::Array{Float32}
+fbdata(fbname, [host, [port]]; chans=:, ifs=:, times=:, fqav=1, tmav=1, dropdims=())::Array{Float32}
 ```
 
 See the doc string of each function for detailed usage.
