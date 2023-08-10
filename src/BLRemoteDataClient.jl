@@ -58,6 +58,19 @@ function restcall(path, host=HOST[], port=PORT[]; kwargs...)
     end
 end
 
+function resp2array(::Type{T}, resp)::Array{T} where T
+    ii = findfirst(p->p[1]=="X-dims", resp.headers)
+    @assert ii !== nothing "X-dims header not found"
+    dims = parse.(Int, split(resp.headers[ii][2] , ",")) |> Tuple
+    @assert prod(dims) * sizeof(T) == sizeof(resp.body) "type/size mismatch"
+    data = Array{T}(undef, dims)
+    copyto!(data, reinterpret(T, resp.body))
+end
+
+function resp2arrayf32(resp)::Array{Float32}
+    resp2array(Float32, resp)
+end
+
 """
     version([host, [port]])::String
     version(hosts, [port])::Vector{String}
@@ -226,12 +239,9 @@ extension).
 function fbdata(fbname, host=HOST[], port=PORT[];
                 chans=:, ifs=:, times=:, fqav::Integer=1, tmav::Integer=1,
                 dropdims=())::Array{Float32}
-    restcall("fbdata", host, port; file=fbname, chans, ifs, times, fqav, tmav) do resp
-        ii = findfirst(p->p[1]=="X-dims", resp.headers)
-        dims = parse.(Int, split(resp.headers[ii][2] , ",")) |> Tuple
-        data = collect(reshape(reinterpret(Float32, resp.body), dims))
-        Base.dropdims(data; dims=dropdims)
-    end
+    data = restcall(resp2arrayf32, "fbdata", host, port;
+                    file=fbname, chans, ifs, times, fqav, tmav)
+    Base.dropdims(data; dims=dropdims)
 end
 
 function fbdata(fbname, hosts::AbstractVector, port=PORT[];
