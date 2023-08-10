@@ -1,6 +1,7 @@
 module BLRemoteDataClient
 
 using HTTP, JSON
+using Base64: Base64DecodePipe
 import DataStructures: SortedDict
 
 include("version.jl")
@@ -257,6 +258,79 @@ function fbdata(fbnames::AbstractVector, hosts::AbstractVector, port=PORT[];
                 dropdims=())::Vector{Array{Float32}}
     pmap(zip(fbnames, hosts)) do (f,h)
         fbdata(f, h, port; chans, ifs, times, fqav, tmav, dropdims)
+    end
+end
+
+### Hits files
+
+const HitsFilesReturnType = Tuple{
+    Vector{SortedDict{String,Any,BLRDOrdering}},
+    Union{Vector{Array{Float32}},Nothing}
+}
+
+"""
+    hitsfiles(dir, [host, [port]]; regex="\\.hits\$", withdata=false) -> (meta, data)
+    hitsfiles(dir, hosts, [port];  regex="\\.hits\$", withdata=false) -> (meta, data)
+
+Finds all files in/under directory `dir` that match `regex` and returns a
+`Vector` of dictionaries each containing the header metadata from a
+*Hits* file plus `hostname` and `filename` fields.  Matching files
+that fail to parse as a *Hits* file will have dictionaries containing only
+these two "extra" fields.  Also returned is a Vector of data matrices if
+`withdata` is true or `nothing` is `withdata` is false.
+
+If `hosts` is a Vector of hosts, the function is called for each host in
+parallel and all results are returned in a single
+`Vector{SortedDict{String,Any}}` (and the companion data Vector or `nothing`).
+"""
+function hitsfiles(dir, host=HOST[], port=PORT[];
+                 regex="\\.hits\$", withdata=false)::HitsFilesReturnType
+    meta = restcall("hitsfiles", host, port; dir, regex, withdata)
+    if withdata
+        data = map(meta) do m
+            nchan = m["numChannels"]
+            ntime = m["numTimesteps"]
+            d = Array{Float32}(undef, nchan, ntime)
+            b64 = Base64DecodePipe(IOBuffer(m["data"]))
+            read!(b64, d)
+        end
+        # Delete data fields from meta
+        foreach(m->delete!(m, "data"), meta)
+    else
+        data = nothing
+    end
+    meta, data
+end
+
+function hitsfiles(dir, hosts::AbstractVector, port=PORT[];
+                 regex="\\.hits\$", withdata=false)::HitsFilesReturnType
+    meta_data = pmapreduce(h->hitsfiles(dir, h, port; regex, withdata), vcat, hosts)
+    if withdata
+        return first.(meta_data), last.(meta_data)
+    else
+        return first.(meta_data), nothing
+    end
+end
+
+"""
+    hitdata(file, offset, [host,  [port]]) -> Matrix
+    hitdata(files offsets, hosts, [port])  -> Vector{Matrix}
+
+Get the Filterbank swatch associated with the CapnProto *Hit* at the
+specified `offset` of the specified `file`.
+
+If `files`, `offsets`, and `hosts` are Vectors, the function is called for
+corresponding elements in parallel and all results are returned as a
+`Vector{Matrix}`.
+"""
+function hitdata(file, offset, host=HOST[], port=PORT[])::Matrix{Float32}
+    restcall(resp2arrayf32, "hitdata", host, port; file, offset)
+end
+
+function hitdata(files::AbstractVector, offsets::AbstractVector,
+                 hosts::AbstractVector, port=PORT[])::Vector{Matrix{Float32}}
+    pmap(zip(files, offsets, hosts)) do (f,o,h)
+        restcall(resp2arrayf32, "hitdata", h, port; file=f, offset=o)
     end
 end
 
