@@ -6,6 +6,7 @@ import DataStructures: SortedDict
 include("version.jl")
 include("ordering.jl")
 include("pmap.jl")
+include("nsum.jl")
 
 """
 A `Ref` holding the default hostname of the server.  This is initialized to the
