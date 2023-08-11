@@ -72,6 +72,10 @@ function resp2arrayf32(resp)::Array{Float32}
     resp2array(Float32, resp)
 end
 
+function resp2arraycf32(resp)::Array{ComplexF32}
+    resp2array(ComplexF32, resp)
+end
+
 """
     version([host, [port]])::String
     version(hosts, [port])::Vector{String}
@@ -338,6 +342,56 @@ function hitdata(files::AbstractVector, offsets::AbstractVector,
                  hosts::AbstractVector, port=PORT[])::Vector{Matrix{Float32}}
     pmap(zip(files, offsets, hosts)) do (f,o,h)
         restcall(resp2arrayf32, "hitdata", h, port; file=f, offset=o)
+    end
+end
+
+### Stamps files
+
+"""
+    stampsfiles(dir, [host, [port]]; regex="\\.stamps\$") -> meta
+    stampsfiles(dir, hosts, [port];  regex="\\.stamps\$") -> meta
+
+Finds all files in/under directory `dir` that match `regex` and returns a
+`Vector` of dictionaries each containing the header metadata from a
+*Stamps* file plus `hostname` and `filename` fields.  Matching files
+that fail to parse as a *Stamps* file will have dictionaries containing only
+these two "extra" fields.
+
+If `hosts` is a Vector of hosts, the function is called for each host in
+parallel and all results are returned in a single
+`Vector{SortedDict{String,Any}}` (and the companion data Vector or `nothing`).
+"""
+function stampsfiles(dir, host=HOST[], port=PORT[];
+                     regex="\\.stamps\$")::Vector{SortedDict{String,Any,BLRDOrdering}}
+    restcall("stampsfiles", host, port; dir, regex)
+end
+
+function stampsfiles(dir, hosts::AbstractVector, port=PORT[];
+                     regex="\\.stamps\$")::Vector{SortedDict{String,Any,BLRDOrdering}}
+    pmapreduce(h->stampsfiles(dir, h, port; regex), vcat, hosts;
+               init=SortedDict{String,Any,BLRDOrdering}[])
+end
+
+"""
+    stampsdata(file, offset, [host,  [port]]) -> Array
+    stampsdata(files offsets, hosts, [port])  -> Vector{Array}
+
+Get the 4D voltage `Array` associated with the CapnProto *Stamp* at the
+specified `offset` of the specified `file`.  The `Array` is indexed as
+`[antenna, polarization, channel, time]`.
+
+If `files`, `offsets`, and `hosts` are Vectors, the function is called for
+corresponding elements in parallel and all results are returned as a
+`Vector{Array}`.
+"""
+function stampdata(file, offset, host=HOST[], port=PORT[])::Array{ComplexF32,4}
+    restcall(resp2arraycf32, "stampdata", host, port; file, offset)
+end
+
+function stampdata(files::AbstractVector, offsets::AbstractVector,
+                   hosts::AbstractVector, port=PORT[])::Vector{Array{ComplexF32,4}}
+    pmap(zip(files, offsets, hosts)) do (f,o,h)
+        restcall(resp2arraycf32, "stampdata", h, port; file=f, offset=o)
     end
 end
 
