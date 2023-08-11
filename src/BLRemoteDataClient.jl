@@ -202,7 +202,8 @@ end
 
 function fbfiles(dir, hosts::AbstractVector, port=PORT[];
                  regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any,BLRDOrdering}}
-    pmapreduce(h->fbfiles(dir, h, port; regex), vcat, hosts)
+    pmapreduce(h->fbfiles(dir, h, port; regex), vcat, hosts;
+               init=SortedDict{String,Any,BLRDOrdering}[])
 end
 
 """
@@ -268,6 +269,11 @@ const HitsFilesReturnType = Tuple{
     Union{Vector{Array{Float32}},Nothing}
 }
 
+const HitsFilesReduceType = Tuple{
+    SortedDict{String,Any,BLRDOrdering},
+    Union{Vector{Array{Float32}},Nothing}
+}
+
 """
     hitsfiles(dir, [host, [port]]; regex="\\.hits\$", withdata=false) -> (meta, data)
     hitsfiles(dir, hosts, [port];  regex="\\.hits\$", withdata=false) -> (meta, data)
@@ -304,7 +310,8 @@ end
 
 function hitsfiles(dir, hosts::AbstractVector, port=PORT[];
                  regex="\\.hits\$", withdata=false)::HitsFilesReturnType
-    meta_data = pmapreduce(h->hitsfiles(dir, h, port; regex, withdata), vcat, hosts)
+    meta_data = pmapreduce(h->hitsfiles(dir, h, port; regex, withdata),
+                           vcat, hosts; init=HitsFilesReduceType[])
     if withdata
         return first.(meta_data), last.(meta_data)
     else
