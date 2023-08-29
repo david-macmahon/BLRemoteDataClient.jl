@@ -234,7 +234,7 @@ and/or time indices (i.e. with `:`), an error will occur if the size of the
 dimension is not divisible by the corresponding averaging value.
 
 If `hosts` is a Vector of hosts, the function is called for each host in
-parallel and a Vector of Arrays corresponding to the hosts is returned.  in this
+parallel and a Vector of Arrays corresponding to the hosts is returned.  In this
 case, `fbanme` can be an AbstractString that is common across all hosts, or a
 `Vector{<:AbstractString}` with host-specific filenames.
 
