@@ -18,17 +18,22 @@ Pkg.add("https://github.com/david-macmahon/BLRemoteDataClient.jl")
 
 ## Client overview
 
-The client provides functions to access to the following RESTful API endpoints:
+The client provides functions to access to the following RESTful API endpoints
+of a `BLRemoteDataServer`:
 
-| Endpoint  | Function  |
-|:----------|:----------|
-|/version   | version   |
-|/prefixes  | prefixes  |
-|/readdir   | readdir   |
-|/finddirs  | finddirs  |
-|/findfiles | findfiles |
-|/fbfiles   | fbfiles   |
-|/fbdata    | fbdata    |
+| Endpoint     | Function    |
+|:-------------|:------------|
+| /version     | version     |
+| /prefixes    | prefixes    |
+| /readdir     | readdir     |
+| /finddirs    | finddirs    |
+| /findfiles   | findfiles   |
+| /fbfiles     | fbfiles     |
+| /fbdata      | fbdata      |
+| /hitsfiles   | hitsfiles   |
+| /hitsdata    | hitsdata    |
+| /stampsfiles | stampsfiles |
+| /stampsdata  | stampsdata  |
 
 Each function takes any required parameters of the endpoint (usually a directory
 or file name) as the initial arguments, followed by optional `host` and `port`
@@ -48,14 +53,27 @@ initialized to `"localhost"` and `PORT` is initialized to 8000.
 Here are the methods supported by the client:
 
 ```
-version([host, [port]])::String
-prefixes([host, [port]])::Vector{String}
-readdir(dir, [host, [port]]; regex=".", join=true)::Vector{String}
-finddirs(dir, [host, [port]]; regex=".", join=true)::Vector{String}
-findfiles(dir, [host, [port]]; regex=".", join=true)::Vector{String}
-fbfiles(dir, [host, [port]]; regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any}}
-fbdata(fbname, [host, [port]]; chans=:, ifs=:, times=:, fqav=1, tmav=1, dropdims=())::Array{Float32}
+version([HOST, [port]])::String
+prefixes([HOST, [port]])::Vector{String}
+readdir(dir, [HOST, [port]]; regex=".", join=true)::Vector{String}
+finddirs(dir, [HOST, [port]]; regex=".", join=true)::Vector{String}
+findfiles(dir, [HOST, [port]]; regex=".", join=true)::Vector{String}
+fbfiles(dir, [HOST, [port]]; regex="\\.(fil|h5)\$")::Vector{SortedDict{String,Any}}
+fbdata(FILENAME, [HOST, [port]]; chans=:, ifs=:, times=:, fqav=1, tmav=1, dropdims=())::Array{Float32}
+hitsfiles(dir, [HOST, [port]]; regex="\\.hits\$", withdata=false)::Tuple{Vector{SortedDict{String,Any}},Union{Nothing,Vector{Matrix{Float32}}}}
+hitsdata(FILENAME, FILEINDEX, [HOST, [port]])::Matrix{Float32}
+stampsfiles(dir, [HOST, [port]]; regex="\\.stamps\$")::Vector{SortedDict{String,Any}}
+stampsdata(FILENAME, FILEINDEX, [HOST, [port]])::Matrix{Float32}
 ```
+
+Arguments shown in uppercase can be given as scalars (i.e. single values) or as
+Vectors.  When using the Vector forms, all vector-capable arguments must be
+given as Vectors.  The queries are run in parallel on the specified hosts and
+the results are generally returned as a Vector of the return type shown where
+the elements correspond one to one with the Vector arguments passed.  The
+exceptions to this are the functions returning `Vector{SortedDict}` which simply
+concatenate all the results into a single Vector since the `SortedDict`s contain
+the hostname and any other relevant info needed to disambiguate.
 
 See the doc string of each function for detailed usage.
 
@@ -63,9 +81,9 @@ See the doc string of each function for detailed usage.
 
 To use the client with a single server you can pass the hostname and port of the
 server on each call to a client function OR you can store the server's hostname
-and port in the `HOST` and `PORT` variables.  Because they are `Ref`s you must
-index them with `[]` when getting or setting their value.  The following are
-equivalent:
+and port in the `HOST` and `PORT` variables of the `BLRemoteDataClient` module.
+Because they are `Ref`s you must index them with `[]` when getting or setting
+their value.  The following are equivalent:
 
 ```julia
 # With explicit hostname
@@ -82,17 +100,7 @@ julia> println(BLRemoteDataClient.prefixes())
 
 ## Using the client with multiple servers
 
-Julia's broadcasting mechanism provides a convenient way to query multiple hosts
-with one call:
-
-```julia
-hosts = ["blc$i$j" for i in 0:7 for j in 0:7] # "blc00" to "blc77" 
-all_session_dirs = finddirs.("/datax/dibas", hosts; regex="AGBT..._999")
-```
-
-When querying many servers it may be beneficial to parallelize the queries by
-broadcasting `fetch` over a `Threads.@spawn` generator:
-
-```julia
-all_session_dirs = fetch.(Threads.@spawn BLRemoteDataClient.finddirs("/datax/dibas", h, regex="AGBT..._999") for h in hosts)
-```
+When using the client with multiple servers it is preferable NOT to use
+broadcasting because the forms of the functions that take a Vector of hostnames
+(and possibly other arguments) will execute the queries in parallel whereas
+broadcasting will NOT execute the queries in parallel.

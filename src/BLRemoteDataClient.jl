@@ -235,7 +235,7 @@ dimension is not divisible by the corresponding averaging value.
 
 If `hosts` is a Vector of hosts, the function is called for each host in
 parallel and a Vector of Arrays corresponding to the hosts is returned.  In this
-case, `fbanme` can be an AbstractString that is common across all hosts, or a
+case, `fbname` can be an AbstractString that is common across all hosts, or a
 `Vector{<:AbstractString}` with host-specific filenames.
 
 This function works with both *SIGPROC Filterbank* files (typically having a
@@ -246,7 +246,7 @@ function fbdata(fbname, host=HOST[], port=PORT[];
                 chans=:, ifs=:, times=:, fqav::Integer=1, tmav::Integer=1,
                 dropdims=())::Array{Float32}
     data = restcall(resp2arrayf32, "fbdata", host, port;
-                    file=fbname, chans, ifs, times, fqav, tmav)
+                    filename=fbname, chans, ifs, times, fqav, tmav)
     Base.dropdims(data; dims=dropdims)
 end
 
@@ -324,24 +324,24 @@ function hitsfiles(dir, hosts::AbstractVector, port=PORT[];
 end
 
 """
-    hitdata(file, offset, [host,  [port]]) -> Matrix
-    hitdata(files offsets, hosts, [port])  -> Vector{Matrix}
+    hitdata(filename, fileindex,  [host,  [port]]) -> Matrix
+    hitdata(filenames fileindexes, hosts, [port])  -> Vector{Matrix}
 
 Get the Filterbank swatch associated with the CapnProto *Hit* at the
-specified `offset` of the specified `file`.
+specified `fileindex` of the specified `filename`.
 
-If `files`, `offsets`, and `hosts` are Vectors, the function is called for
-corresponding elements in parallel and all results are returned as a
+If `filenames`, `fileindexes`, and `hosts` are Vectors, the function is called
+for corresponding elements in parallel and all results are returned as a
 `Vector{Matrix}`.
 """
-function hitdata(file, offset, host=HOST[], port=PORT[])::Matrix{Float32}
-    restcall(resp2arrayf32, "hitdata", host, port; file, offset)
+function hitdata(filename, fileindex, host=HOST[], port=PORT[])::Matrix{Float32}
+    restcall(resp2arrayf32, "hitdata", host, port; filename, fileindex)
 end
 
-function hitdata(files::AbstractVector, offsets::AbstractVector,
+function hitdata(filenames::AbstractVector, fileindexes::AbstractVector,
                  hosts::AbstractVector, port=PORT[])::Vector{Matrix{Float32}}
-    pmap(zip(files, offsets, hosts)) do (f,o,h)
-        restcall(resp2arrayf32, "hitdata", h, port; file=f, offset=o)
+    pmap(zip(filenames, fileindexes, hosts)) do (f,i,h)
+        restcall(resp2arrayf32, "hitdata", h, port; filename=f, fileindex=i)
     end
 end
 
@@ -373,25 +373,25 @@ function stampsfiles(dir, hosts::AbstractVector, port=PORT[];
 end
 
 """
-    stampsdata(file, offset, [host,  [port]]) -> Array
-    stampsdata(files offsets, hosts, [port])  -> Vector{Array}
+    stampsdata(filename, fileindex,  [host,  [port]]) -> Array
+    stampsdata(filenames fileindexes, hosts, [port])  -> Vector{Array}
 
 Get the 4D voltage `Array` associated with the CapnProto *Stamp* at the
-specified `offset` of the specified `file`.  The `Array` is indexed as
+specified `fileindex` of the specified `filename`.  The `Array` is indexed as
 `[antenna, polarization, channel, time]`.
 
-If `files`, `offsets`, and `hosts` are Vectors, the function is called for
-corresponding elements in parallel and all results are returned as a
+If `filenames`, `fileindexes`, and `hosts` are Vectors, the function is called
+for corresponding elements in parallel and all results are returned as a
 `Vector{Array}`.
 """
-function stampdata(file, offset, host=HOST[], port=PORT[])::Array{ComplexF32,4}
-    restcall(resp2arraycf32, "stampdata", host, port; file, offset)
+function stampdata(filename, fileindex, host=HOST[], port=PORT[])::Array{ComplexF32,4}
+    restcall(resp2arraycf32, "stampdata", host, port; filename, fileindex)
 end
 
-function stampdata(files::AbstractVector, offsets::AbstractVector,
+function stampdata(filenames::AbstractVector, fileindexes::AbstractVector,
                    hosts::AbstractVector, port=PORT[])::Vector{Array{ComplexF32,4}}
-    pmap(zip(files, offsets, hosts)) do (f,o,h)
-        restcall(resp2arraycf32, "stampdata", h, port; file=f, offset=o)
+    pmap(zip(filenames, fileindexes, hosts)) do (f,i,h)
+        restcall(resp2arraycf32, "stampdata", h, port; filename=f, fileindex=i)
     end
 end
 
