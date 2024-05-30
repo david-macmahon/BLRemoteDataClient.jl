@@ -44,7 +44,13 @@ end
 
 function restcall(f::Function, path, host=HOST[], port=PORT[]; kwargs...)
     query = [string(k)=>string(v) for (k,v) in kwargs]
-    resp = HTTP.get(url(path, host, port); query)
+    local resp
+    try
+        resp = HTTP.get(url(path, host, port); query)
+    catch
+        # Return empty array on error
+        return SortedDict{String, Any, BLRDOrdering}[]
+    end
     if resp.status == HTTP.StatusCodes.OK
         f(resp)
     else
